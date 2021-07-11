@@ -18,3 +18,4 @@ streamlit run app.py
 ```
 
 ![alt text](docs/Streamlit_Image.png?raw=true "Title")
+## NOTE THIS IS NOT FINANCIAL ADVICE... PLEASE CONSULT A CPA OR FINANCIAL ADVISOR FOR YOUR OWN TAX SITUATION.
