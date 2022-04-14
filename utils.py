@@ -86,31 +86,22 @@ class Trades(PortfolioBase):
 
     def preprocess_trades(self):
         """Combine trades at same timestamp."""
+        def wm(x): return np.average(x, weights=self.loc[x.index, "quantity"])
 
-        df = self.sort_values("buy_date")
         new_transactions = pd.DataFrame()
-        for asset in self.get_asset_names():
-            for trade_type in ["buy", "sell"]:
-                temp = df[df["asset"] == asset]
-                temp_group = (
-                    temp.groupby(trade_type + "_date")
-                    .apply(
-                        lambda x: pd.Series(
-                            {
-                                "asset": x["asset"].iloc[0],
-                                "quantity": x["quantity"].sum(),
-                                trade_type
-                                + "_price": (
-                                    x[trade_type + "_price"]
-                                    * abs(x["quantity"])
-                                    / abs(x["quantity"]).sum()
-                                ).sum(),
-                            }
-                        )
-                    )
-                    .reset_index()
-                )
-                new_transactions = pd.concat([new_transactions, temp_group])
+        buy_transactions = self.groupby([self.asset, self.buy_date.dt.date],
+                                        as_index=False).agg(quantity=("quantity", 'sum'),
+                                                            buy_price=(
+                                                                "buy_price", wm),
+                                                            buy_date=("buy_date", "max"))
+        sell_transactions = self.groupby([self.asset, self.sell_date.dt.date],
+                                         as_index=False).agg(quantity=("quantity", 'sum'),
+                                                             sell_price=(
+                                                                 "sell_price", wm),
+                                                             sell_date=("sell_date", "max"))
+        #df = self.sort_values("buy_date")
+        new_transactions = pd.concat([buy_transactions, sell_transactions])
+
         return Trades(new_transactions)
 
     def get_sells(
@@ -141,8 +132,10 @@ class Trades(PortfolioBase):
         elif assets is None:
             assets = self.get_asset_names()
 
-        buy_date_filter = (self.buy_date <= end_date) & (self.buy_date >= start_date)
-        sell_date_filter = (self.sell_date <= end_date) & (self.sell_date >= start_date)
+        buy_date_filter = (self.buy_date <= end_date) & (
+            self.buy_date >= start_date)
+        sell_date_filter = (self.sell_date <= end_date) & (
+            self.sell_date >= start_date)
 
         if trade_type == Side.BUY:
             date_filter = buy_date_filter
@@ -222,7 +215,8 @@ class Transactions(PortfolioBase):
             new_row = pd.DataFrame(
                 [
                     [j.asset, j.quantity, j.buy_price, j.buy_date, np.nan, np.nan],
-                    [j.asset, j.quantity, np.nan, np.nan, j.sell_price, j.sell_date],
+                    [j.asset, j.quantity, np.nan, np.nan,
+                        j.sell_price, j.sell_date],
                 ],
                 columns=[
                     "asset",
