@@ -41,7 +41,8 @@ def run_application():
         filepath = "sample_data/sample_trades2.csv"
         trades = Trades.from_csv(filepath)
     elif source_data == "Upload File":
-        data_file = st.sidebar.file_uploader("Upload Trade File", type=["csv", "txt"])
+        data_file = st.sidebar.file_uploader(
+            "Upload Trade File", type=["csv", "txt"])
         if data_file is not None:
             trades = Trades.from_csv(data_file)
         else:
@@ -49,7 +50,8 @@ def run_application():
                 "Data format for trades is a 6 column csv/txt file with these columns names:"
             )
             filepath = "sample_data/sample_trades1.csv"
-            sample_trades = Trades.from_csv(filepath).assign(hack="").set_index("hack")
+            sample_trades = Trades.from_csv(
+                filepath).assign(hack="").set_index("hack")
             st.write(sample_trades)
             st.markdown(
                 get_df_download_link(
@@ -64,19 +66,34 @@ def run_application():
             "Aggregate Trades At Same Timestamp", value=True
         )
         if preprocess:
-            trades = trades.preprocess_trades()
+            trades = Trades(trades.preprocess_trades())
 
+        try:
+            import cvxopt
+            solvers = [
+                "CVXOPT",
+                "scipy.optimize.linprog"
+            ]
+        except:
+            solvers = [
+                "scipy.optimize.linprog"
+                # "CVXOPT"
+            ]
         opt_method = st.sidebar.radio(
-            "scipy.optimize.linprog algorithm",
-            [
-                "highs-ds",
-                "highs-ipm",
-                "highs",
-                "interior-point",
-                "revised simplex",
-                "simplex",
-            ],
+            "Solver", solvers
         )
+        if(opt_method == "scipy.optimize.linprog"):
+            opt_method = st.sidebar.radio(
+                "scipy.optimize.linprog algorithm",
+                [
+                    "revised simplex",
+                    "simplex",
+                    "highs-ds",
+                    "highs-ipm",
+                    "highs",
+                    "interior-point"
+                ]
+            )
 
         st.sidebar.markdown(
             """<a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html">scipy.optimize.linprog</a>""",
@@ -89,7 +106,7 @@ def run_application():
         )
         trades = Trades(trades.get_trades(selected_assets))
 
-        sample_trade_expander = st.beta_expander(
+        sample_trade_expander = st.expander(
             "Trade Data Click Here To Open --------------------->"
         )
         sample_trade_expander.write(trades.assign(hack="").set_index("hack"))
@@ -97,7 +114,7 @@ def run_application():
             get_df_download_link(trades, "Download Data Here", "output.csv"),
             unsafe_allow_html=True,
         )
-        col10, col11 = st.beta_columns(2)
+        col10, col11 = st.columns(2)
         ordering = col10.radio(
             "Lot Ordering", list(LotOrdering.__members__.keys()), index=3
         )
@@ -106,7 +123,7 @@ def run_application():
             ["Single table", "Split into separate tables"],
         )
 
-        col1, col2 = st.beta_columns(2)
+        col1, col2 = st.columns(2)
         st_rate = col1.number_input("Short Term Tax Rate", value=0.35)
         lt_rate = col2.number_input("Long Term Tax Rate", value=0.15)
 
@@ -122,7 +139,7 @@ def run_application():
             [
                 [
                     transactions.get_st_tax_gains(),
-                    transactions.get_st_tax_losses(),
+                    transactions.get_lt_tax_gains(),
                     transactions.get_st_tax_losses(),
                     transactions.get_lt_tax_losses(),
                     transactions.get_tax_liability(st_rate, lt_rate),
@@ -139,12 +156,13 @@ def run_application():
         )
         st.dataframe(results.T)
 
-        ### Get current prices to compute unrealized gains
+        # Get current prices to compute unrealized gains
         current_prices = get_current_prices(selected_assets)
         for asset in selected_assets:
             open_pos = holdings["asset"] == asset
             if current_prices.get(asset) is not None:
-                holdings.loc[open_pos, "current_price"] = current_prices.get(asset)
+                holdings.loc[open_pos,
+                             "current_price"] = current_prices.get(asset)
             else:
                 st.error(
                     f"Error getting price of asset: {asset}. Unrealized Gains cannot be displayed"
@@ -163,13 +181,14 @@ def run_application():
         )
 
         if split_holdings_from_sells != "Single table":
-            col6, col7 = st.beta_columns(2)
+            col6, col7 = st.columns(2)
 
             data = holdings.dropna(axis=1, how="all").sort_values("buy_date")
             col6.write("Current Holdings")
             col6.write(data)
 
-            data = transactions.dropna(axis=1, how="all").sort_values("buy_date")
+            data = transactions.dropna(
+                axis=1, how="all").sort_values("buy_date")
             col7.write("Past Transactions")
             col7.write(data)
         else:
