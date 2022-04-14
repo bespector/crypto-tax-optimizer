@@ -54,7 +54,7 @@ def run_trade_allocator(
                                              b=matrix(problem['b_eq']))
                 if(solution['status'] != 'optimal'):
                     print(solution['status'])
-                    raise Exception("Error solving optimization problem!")
+                    #raise Exception("Error solving optimization problem!")
                 x = list(solution['x'])
             else:
                 solution = linprog(
@@ -180,8 +180,7 @@ def _get_objective_value(
     """
 
     if lot_method == LotOrdering.FIFO:
-        obj = range(sell_trade.Index*len(buys_before),
-                    sell_trade.Index*len(buys_before)+len(buys_before), 1)
+        obj = range(0, len(buys_before), 1)
         obj = [1.0*i for i in obj]
     elif lot_method == LotOrdering.HIFO:
         obj = list(-buys_before.buy_price)
