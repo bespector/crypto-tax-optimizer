@@ -1,3 +1,8 @@
+# Copyright (c) 2022 Brian Spector
+#
+# This software is released under the MIT License.
+# https://opensource.org/licenses/MIT
+
 import base64
 
 import numpy as np
@@ -9,6 +14,7 @@ from crypto_tax_calculator import LotOrdering, Trades, run_trade_allocator
 
 
 def main():
+    st.set_page_config(layout='wide')
     st.title("Crypto Tax Lot Analyzer")
 
     page = st.sidebar.radio(
@@ -29,7 +35,6 @@ def write_markdown_file(file_name):
 
 
 def run_application():
-    _set_max_width()
     trades = None
     source_data = st.sidebar.radio(
         "Data Source", ["Sample Data1", "Sample Data2", "Upload File"]
@@ -250,17 +255,6 @@ def get_current_prices(asset_names: list, currency: str = "usd") -> dict:
         else:
             prices[asset] = None
     return prices
-
-
-def _set_max_width():
-    st.markdown(
-        """
-    <style>
-    .reportview-container .main .block-container{max-width: 2000px;}
-    </style>
-    """,
-        unsafe_allow_html=True,
-    )
 
 
 if __name__ == "__main__":

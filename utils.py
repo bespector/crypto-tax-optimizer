@@ -1,3 +1,8 @@
+# Copyright (c) 2022 Brian Spector
+#
+# This software is released under the MIT License.
+# https://opensource.org/licenses/MIT
+
 import datetime
 from enum import Enum
 from typing import Union
